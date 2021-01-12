@@ -2,10 +2,15 @@ import path from 'path';
 import fs from 'fs';
 import postcss from 'postcss';
 import flatMap from 'lodash/flatMap';
+import flatten from 'lodash/flatten';
 import Node from 'postcss/lib/node';
 import parseObjectStyles from 'tailwindcss/lib/util/parseObjectStyles';
 
-import { toCamelCase, capitalizeFirstLetter } from '../StringHelpers';
+import {
+  toCamelCase,
+  capitalizeFirstLetter,
+  lowerFirstLetter,
+} from '../StringHelpers';
 import SelectorParser from '../SelectorParser';
 
 abstract class TypeGenerator {
@@ -19,6 +24,10 @@ abstract class TypeGenerator {
   private utilities?: any[];
   private variants?: string[];
 
+  allTypes?: {
+    [pluginName: string]: string[][];
+  };
+
   constructor(outDir) {
     this.outDir = outDir;
 
@@ -26,6 +35,8 @@ abstract class TypeGenerator {
     if (!fs.existsSync(path.resolve(this.outDir))) {
       fs.mkdirSync(path.resolve(this.outDir));
     }
+
+    this.allTypes = {};
   }
 
   private parseSelector(selector) {
@@ -126,7 +137,8 @@ abstract class TypeGenerator {
     };
     const variantTypes = this.generateVariantTypes(classNames);
 
-    let types = [mainType, ...variantTypes];
+    const types = [mainType, ...variantTypes];
+    this.allTypes[pluginName] = types.map(type => type.name);
 
     this.writeTypeIntoFile(
       capitalizeFirstLetter(this.pluginName),
@@ -134,6 +146,34 @@ abstract class TypeGenerator {
     );
 
     return types.map(type => type.name);
+  }
+
+  generateTailwindPropsInterface() {
+    let importTemplates = Object.keys(this.allTypes)
+      .map(
+        key =>
+          `import { ${this.allTypes[key].join(' , ')} } from './${
+            this.allTypes[key][0]
+          }';`
+      )
+      .join('\n');
+
+    let properties = flatten(
+      Object.keys(this.allTypes).map(key => {
+        return this.allTypes[key].map(
+          type => `  tw_${lowerFirstLetter(type)} : ${type};`
+        );
+      })
+    ).join('\n');
+
+    let typeTemplate = `export default interface TailwindStyledSystem {
+    ${properties}
+  }`;
+
+    this.writeTypeIntoFile(
+      'TailwindStyledSystem',
+      [importTemplates, typeTemplate].join('\n\n')
+    );
   }
 
   abstract createTypeTemplate(type);
