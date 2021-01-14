@@ -74,23 +74,33 @@ abstract class TypeGenerator {
 
         return;
       }
-
-      const breakpoints = Object.keys(this.screens);
-
-      let ResponsiveType = {
-        name: `Responsive${capitalizeFirstLetter(this.pluginName)}`,
-        values: {},
-      };
-      breakpoints.forEach(breakpoint => {
-        ResponsiveType.values[breakpoint] = classNames.map(
-          className => breakpoint + this.twSeparator + className
-        );
-      });
-
-      variantTypes.push(ResponsiveType);
     });
 
     return variantTypes;
+  }
+
+  private generateResponsiveTypes(types = []) {
+    if (!(Array.isArray(this.variants) && this.variants.includes('responsive')))
+      return [];
+
+    const breakpoints = Object.keys(this.screens);
+
+    let ResponsiveTypes = types.map(type => {
+      let ResponsiveType = {
+        name: `Responsive${type.name}`,
+        values: {},
+      };
+
+      breakpoints.forEach(breakpoint => {
+        ResponsiveType.values[breakpoint] = type.values.map(
+          value => breakpoint + this.twSeparator + value
+        );
+      });
+
+      return ResponsiveType;
+    });
+
+    return ResponsiveTypes;
   }
 
   private async writeTypeIntoFile(fileName, content) {
@@ -138,14 +148,19 @@ abstract class TypeGenerator {
     const variantTypes = this.generateVariantTypes(classNames);
 
     const types = [mainType, ...variantTypes];
-    this.allTypes[pluginName] = types.map(type => type.name);
+
+    const responsiveTypes = this.generateResponsiveTypes(types);
+
+    const allPluginTypes = [...types, ...responsiveTypes];
+
+    this.allTypes[pluginName] = allPluginTypes.map(type => type.name);
 
     this.writeTypeIntoFile(
       capitalizeFirstLetter(this.pluginName),
-      types.map(this.createTypeTemplate).join('\n\n')
+      allPluginTypes.map(this.createTypeTemplate.bind(this)).join('\n\n')
     );
 
-    return types.map(type => type.name);
+    return allPluginTypes.map(type => type.name);
   }
 
   generateTailwindPropsInterface() {
@@ -161,7 +176,7 @@ abstract class TypeGenerator {
     let properties = flatten(
       Object.keys(this.allTypes).map(key => {
         return this.allTypes[key].map(
-          type => `  tw_${lowerFirstLetter(type)} : ${type};`
+          type => `  tw_${lowerFirstLetter(type)} ?: ${type};`
         );
       })
     ).join('\n');

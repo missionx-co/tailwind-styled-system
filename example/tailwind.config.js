@@ -58,6 +58,9 @@ module.exports = {
       maxWidth: {
         '9xl': '90rem',
       },
+      screens: {
+        print: { raw: '(orientation: portrait)' },
+      },
     },
   },
   variants: {
