@@ -9,29 +9,16 @@ class TypeScriptTypeGenerator extends TypeGenerator {
     // if is object
     return [
       '{',
-      Object.keys(values).map(key => {
+      ...Object.keys(values).map(key => {
         const valuesString = this.generateValueStrings(values[key]);
-        return `${key}: ${valuesString}`;
+        return `  '${key}'?: ${valuesString}`;
       }),
       '}',
-    ].join('\n\n');
+    ].join('\n');
   }
 
   createTypeTemplate(type) {
-    let valuesString = '';
-
-    if (Array.isArray(type.values)) {
-      valuesString = type.values.map(value => `"${value}"`).join(' | ');
-    } else {
-      valuesString = [
-        '{',
-        ...Object.keys(type.values).map(key => {
-          const value = type.values[key].map(value => `"${value}"`).join(' | ');
-          return `  '${key}': ${value}`;
-        }),
-        '}',
-      ].join('\n');
-    }
+    let valuesString = this.generateValueStrings(type.values);
 
     return `export type ${type.name} = ${valuesString};`;
   }

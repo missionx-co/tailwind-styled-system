@@ -1,4 +1,5 @@
 .vscode
 node_modules
-example/tailwindcss-props
+example/tailwind-props
 dist
+package-lock.json
