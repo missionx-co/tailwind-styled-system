@@ -27,21 +27,3 @@ export default function TailwindPropsToClasses(props): string {
   classes = classes.trim();
   return classes;
 }
-
-const testObj1 = {};
-const testObj2 = undefined;
-const testObj3 = {
-  name: 'test',
-  onClick() {},
-  id: 'tets',
-  tw_backgroundColor: 'bg-white',
-  backgroundColor: 'bg-black',
-  test_tw_backgroundColor: 'test',
-  tw_textColor: 'text-blue-900',
-  tw_test: { sm: 'test' },
-  tw_responsiveDivideWidth: { sm: 'sm:test', md: 'md:test' },
-};
-
-console.log(TailwindPropsToClasses(testObj1));
-console.log(TailwindPropsToClasses(testObj2));
-console.log(TailwindPropsToClasses(testObj3));
