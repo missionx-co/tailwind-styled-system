@@ -18,7 +18,7 @@ abstract class TypeGenerator {
   private outDir: string;
 
   // generate specific properties
-  private pluginName?: string;
+  protected pluginName?: string;
   private screens?: string[];
   private twSeparator?: string;
   private utilities?: any[];
