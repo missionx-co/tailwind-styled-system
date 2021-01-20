@@ -1,7 +1,8 @@
-export default function TailwindPropsToClasses(props): string {
+export function TailwindPropsToClasses(props: any): string {
   if (!props) return '';
 
   let classes = '';
+  let newClasses = '';
   const keys = Object.keys(props);
 
   for (let i = 0; i < keys.length; i++) {
@@ -12,18 +13,16 @@ export default function TailwindPropsToClasses(props): string {
     if (!val) continue;
 
     if (typeof val === 'string') {
-      classes = classes.concat(` ${val}`);
+      newClasses = val;
+    } else if (Array.isArray(val)) {
+      newClasses = val.join(' ');
     } else if (typeof val === 'object' && key.includes('responsive')) {
-      const breakpoints = Object.keys(val);
-
-      for (let j = 0; j < breakpoints.length; j++) {
-        const breakpoint = breakpoints[j];
-        const resClass = val[breakpoint];
-        classes = classes.concat(` ${resClass}`);
-      }
+      const values = Object.values(val);
+      newClasses = values.join(' ');
     }
-  }
 
+    classes = classes.concat(` ${newClasses}`);
+  }
   classes = classes.trim();
   return classes;
 }
