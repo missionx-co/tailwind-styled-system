@@ -3,6 +3,9 @@ import TypeGenerator from './TypeGenerator';
 class TypeScriptTypeGenerator extends TypeGenerator {
   private generateValueStrings(values) {
     if (Array.isArray(values)) {
+      if (this.pluginName === 'padding' || this.pluginName === 'margin') {
+        return `(${values.map(value => `"${value}"`).join(' | ')})[]`;
+      }
       return values.map(value => `"${value}"`).join(' | ');
     }
 
