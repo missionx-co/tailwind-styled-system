@@ -181,6 +181,8 @@ abstract class TypeGenerator {
       })
     ).join('\n');
 
+    properties = properties.concat(`\n  tw_customUtilities ?: string[];`);
+
     let typeTemplate = `export default interface TailwindStyledSystem {
     ${properties}
   }`;
