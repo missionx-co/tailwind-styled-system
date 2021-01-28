@@ -1,12 +1,10 @@
 import selectorParser from 'postcss-selector-parser';
+import Node from 'postcss/lib/node';
+import parseObjectStyles from 'tailwindcss/lib/util/parseObjectStyles';
+import flatMap from 'lodash/flatMap';
+import postcss from 'postcss';
 
-class SelectorParser {
-  selector: string;
-
-  constructor(selector) {
-    this.selector = selector;
-  }
-
+class TailwindProcessor {
   private createSelectorFromNodes(nodes) {
     if (nodes.length === 0) return null;
     const selector = selectorParser.selector(undefined);
@@ -16,9 +14,9 @@ class SelectorParser {
     return String(selector).trim();
   }
 
-  toClassNames() {
+  private selectortoClassNames(selector: string) {
     const classNames = [];
-    const { nodes: subSelectors } = selectorParser().astSync(this.selector);
+    const { nodes: subSelectors } = selectorParser().astSync(selector);
 
     for (let i = 0; i < subSelectors.length; i++) {
       let scope = [];
@@ -48,6 +46,35 @@ class SelectorParser {
 
     return classNames;
   }
+
+  private getParsedStyles(styles) {
+    return postcss.root({
+      nodes: this.parseStyles(styles),
+    });
+  }
+
+  private parseStyles(styles) {
+    if (!Array.isArray(styles)) {
+      return this.parseStyles([styles]);
+    }
+
+    return flatMap(styles, style =>
+      style instanceof Node ? style : parseObjectStyles(style)
+    );
+  }
+
+  getClassNames(styles) {
+    let parsedStyles = this.getParsedStyles(styles);
+    let classNames = [];
+    parsedStyles.walkRules(rule => {
+      let ruleClasses = this.selectortoClassNames(rule.selector);
+      if (ruleClasses.length === 0) {
+        return;
+      }
+      classNames.push(ruleClasses[0].className);
+    });
+    return classNames;
+  }
 }
 
-export default SelectorParser;
+export default TailwindProcessor;
