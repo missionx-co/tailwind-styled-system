@@ -87,6 +87,7 @@ module.exports = {
           darker: '#F2A626',
           gradient: 'rgb(250, 204, 21)',
         },
+        'color-inherit': 'inherit',
       },
       maxWidth: {
         '9xl': '90rem',

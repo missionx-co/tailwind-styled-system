@@ -9,11 +9,11 @@ import resolveConfig from 'tailwindcss/resolveConfig';
 import prefixSelector from 'tailwindcss/lib/util/prefixSelector';
 import transformThemeValue from 'tailwindcss/lib/util/transformThemeValue';
 import escapeClassName from 'tailwindcss/lib/util/escapeClassName';
-import corePlugins from './corePlugins';
-import TypeGenerator from './Adapters/TypeGenerator';
+import corePlugins from './tailwindcss/corePlugins';
+import TypeTemplatesCreator from './Adapters/TypeTemplatesCreator';
 
 export default class ReactTailwindTypesGenerator {
-  adapter: TypeGenerator;
+  adapter: TypeTemplatesCreator;
 
   CONFIG_GLOB =
     '**/{tailwind,tailwind.config,tailwind-config,.tailwindrc}.{js,cjs}';

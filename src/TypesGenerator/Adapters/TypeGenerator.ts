@@ -1,22 +1,9 @@
-import path from 'path';
-import fs from 'fs';
-import postcss from 'postcss';
-import flatMap from 'lodash/flatMap';
-import flatten from 'lodash/flatten';
-import Node from 'postcss/lib/node';
-import parseObjectStyles from 'tailwindcss/lib/util/parseObjectStyles';
-
-import {
-  toCamelCase,
-  capitalizeFirstLetter,
-  lowerFirstLetter,
-} from '../StringHelpers';
-import SelectorParser from '../SelectorParser';
+import merge from 'lodash/merge';
+import mergeWith from 'lodash/mergeWith';
+import TailwindProcessor from '../tailwindcss/TailwindProcessor';
+import fromPairs from 'lodash/fromPairs';
 
 abstract class TypeGenerator {
-  private selectorParser: SelectorParser;
-  private outDir: string;
-
   // generate specific properties
   protected pluginName?: string;
   private screens?: string[];
@@ -24,96 +11,74 @@ abstract class TypeGenerator {
   private utilities?: any[];
   private variants?: string[];
 
+  // tailwind stuff
+  protected twProcessor: TailwindProcessor;
+
   allTypes?: {
-    [pluginName: string]: string[][];
+    [pluginName: string]: any;
   };
 
-  constructor(outDir) {
-    this.outDir = outDir;
-
-    // make ourdir of not exits
-    if (!fs.existsSync(path.resolve(this.outDir))) {
-      fs.mkdirSync(path.resolve(this.outDir));
-    }
+  constructor() {
+    this.twProcessor = new TailwindProcessor();
 
     this.allTypes = {};
   }
 
-  private parseSelector(selector) {
-    this.selectorParser = new SelectorParser(selector);
-
-    return this.selectorParser;
-  }
-
-  private parseStyles(styles) {
-    if (!Array.isArray(styles)) {
-      return this.parseStyles([styles]);
-    }
-
-    return flatMap(styles, style =>
-      style instanceof Node ? style : parseObjectStyles(style)
-    );
-  }
-
   private generateVariantTypes(classNames) {
-    let variantTypes = [];
+    let variantTypes = {};
     if (!Array.isArray(this.variants)) {
       return variantTypes;
     }
 
     this.variants.forEach(variant => {
       if (variant !== 'responsive') {
-        variantTypes.push({
-          name: capitalizeFirstLetter(
-            toCamelCase(variant) + '_' + this.pluginName
-          ),
-          values: classNames.map(
+        variantTypes[variant] = {
+          [this.pluginName]: classNames.map(
             className => variant + this.twSeparator + className
           ),
-        });
-
-        return;
+        };
       }
     });
 
     return variantTypes;
   }
 
-  private generateResponsiveTypes(types = []) {
+  private generateResponsiveTypes(types = {}) {
     if (!(Array.isArray(this.variants) && this.variants.includes('responsive')))
-      return [];
+      return {};
 
     const breakpoints = Object.keys(this.screens);
 
-    let ResponsiveTypes = types.map(type => {
-      let ResponsiveType = {
-        name: `Responsive${type.name}`,
-        values: {},
-      };
+    let responsiveTypes = { responsive: {} };
 
-      breakpoints.forEach(breakpoint => {
-        ResponsiveType.values[breakpoint] = type.values.map(
-          value => breakpoint + this.twSeparator + value
-        );
-      });
-
-      return ResponsiveType;
+    breakpoints.forEach(breakpoint => {
+      responsiveTypes.responsive[breakpoint] = mergeWith(
+        {},
+        types,
+        (_des, src) => {
+          if (Array.isArray(src)) {
+            return src.map(val => breakpoint + this.twSeparator + val);
+          }
+          return undefined;
+        }
+      );
     });
 
-    return ResponsiveTypes;
+    return responsiveTypes;
   }
 
-  private async writeTypeIntoFile(fileName, content) {
-    const file = fileName + '.ts';
+  private generateAllTypes(classNames) {
+    const mainType = {
+      [this.pluginName]: classNames,
+    };
 
-    try {
-      await fs.promises.writeFile(
-        path.normalize(path.resolve(this.outDir, file)),
-        content
-      );
-    } catch (error) {
-      console.log(error);
-    }
+    const variantTypes = this.generateVariantTypes(classNames);
+
+    const types = merge(mainType, variantTypes);
+
+    const responsiveTypes = this.generateResponsiveTypes(types);
+
+    return merge(types, responsiveTypes);
   }
 
   generate(
@@ -129,71 +94,41 @@ abstract class TypeGenerator {
     this.utilities = utilities;
     this.variants = variants;
 
-    const styles = postcss.root({ nodes: this.parseStyles(this.utilities) });
+    const classNames = this.twProcessor.getClassNames(this.utilities);
 
-    var classNames = [];
+    const allPluginTypes = this.generateAllTypes(classNames);
 
-    styles.walkRules(rule => {
-      let ruleClasses = this.parseSelector(rule.selector).toClassNames();
-      if (ruleClasses.length === 0) {
-        return;
+    this.allTypes = merge(this.allTypes, allPluginTypes);
+
+    return allPluginTypes;
+  }
+
+  protected sortTypes() {
+    const keys = Object.keys(this.allTypes.responsive || {});
+
+    const sortTwoTypes = (a, b) => {
+      const valA = a[1];
+
+      const valB = b[1];
+
+      if (Array.isArray(valA) && !Array.isArray(valB)) {
+        return -1;
+      } else if (Array.isArray(valA) && Array.isArray(valB)) {
+        return 0;
+      } else {
+        return 1;
       }
-      classNames.push(ruleClasses[0].className);
-    });
-
-    let mainType = {
-      name: capitalizeFirstLetter(this.pluginName),
-      values: classNames,
     };
-    const variantTypes = this.generateVariantTypes(classNames);
 
-    const types = [mainType, ...variantTypes];
+    for (let index = 0; index < keys.length; index++) {
+      const breakpoint = keys[index];
+      this.allTypes.responsive[breakpoint] = fromPairs(
+        Object.entries(this.allTypes.responsive[breakpoint]).sort(sortTwoTypes)
+      );
+    }
 
-    const responsiveTypes = this.generateResponsiveTypes(types);
-
-    const allPluginTypes = [...types, ...responsiveTypes];
-
-    this.allTypes[pluginName] = allPluginTypes.map(type => type.name);
-
-    this.writeTypeIntoFile(
-      capitalizeFirstLetter(this.pluginName),
-      allPluginTypes.map(this.createTypeTemplate.bind(this)).join('\n\n')
-    );
-
-    return allPluginTypes.map(type => type.name);
+    this.allTypes = fromPairs(Object.entries(this.allTypes).sort(sortTwoTypes));
   }
-
-  generateTailwindPropsInterface() {
-    let importTemplates = Object.keys(this.allTypes)
-      .map(
-        key =>
-          `import { ${this.allTypes[key].join(' , ')} } from './${
-            this.allTypes[key][0]
-          }';`
-      )
-      .join('\n');
-
-    let properties = flatten(
-      Object.keys(this.allTypes).map(key => {
-        return this.allTypes[key].map(
-          type => `  tw_${lowerFirstLetter(type)} ?: ${type};`
-        );
-      })
-    ).join('\n');
-
-    properties = properties.concat(`\n  tw_customUtilities ?: string[];`);
-
-    let typeTemplate = `export default interface TailwindStyledSystem {
-    ${properties}
-  }`;
-
-    this.writeTypeIntoFile(
-      'TailwindStyledSystem',
-      [importTemplates, typeTemplate].join('\n\n')
-    );
-  }
-
-  abstract createTypeTemplate(type);
 }
 
 export default TypeGenerator;

@@ -1,4 +1,4 @@
-import numWords from 'num-words';
+// import numWords from 'num-words';
 
 export function lowerFirstLetter(s) {
   if (typeof s !== 'string') return '';
@@ -13,7 +13,7 @@ export function capitalizeFirstLetter(s) {
 export function toCamelCase(name) {
   if (typeof name !== 'string') return '';
 
-  name = name.replace(/^\d/, numWords(name.match(/^\d/)) + '_');
+  // name = name.replace(/^\d/, numWords(name.match(/^\d/)) + '_');
 
   let nameArr = name.split('-');
 
@@ -25,4 +25,12 @@ export function toCamelCase(name) {
       else return item;
     })
     .join('');
+}
+export function formatPropName(name) {
+  const camelCaseName = toCamelCase(name);
+
+  if (camelCaseName.match(/^\d/)) {
+    return `'${camelCaseName}'`;
+  }
+  return camelCaseName;
 }

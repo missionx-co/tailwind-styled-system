@@ -1,28 +1,21 @@
+import flatMapDeep from 'lodash/flatMapDeep';
+
+const flatten = (obj = {}) => {
+  if (typeof obj !== 'object') return [];
+
+  const valuesArr = Object.entries(obj).map(item => {
+    if (Array.isArray(item[1]) || typeof item[1] === 'string') {
+      return item[1];
+    } else if (typeof item[1] === 'object') {
+      return flatten(item[1]);
+    }
+  });
+
+  return flatMapDeep(valuesArr) || [];
+};
+
 export function TailwindPropsToClasses(props: any): string {
   if (!props) return '';
 
-  let classes = '';
-  let newClasses = '';
-  const keys = Object.keys(props);
-
-  for (let i = 0; i < keys.length; i++) {
-    const key = keys[i];
-    if (!key.match(/^tw_/)) continue;
-
-    const val = props[key];
-    if (!val) continue;
-
-    if (typeof val === 'string') {
-      newClasses = val;
-    } else if (Array.isArray(val)) {
-      newClasses = val.join(' ');
-    } else if (typeof val === 'object' && key.includes('responsive')) {
-      const values = Object.values(val);
-      newClasses = values.join(' ');
-    }
-
-    classes = classes.concat(` ${newClasses}`);
-  }
-  classes = classes.trim();
-  return classes;
+  return flatten(props).join(' ');
 }
