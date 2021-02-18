@@ -1,21 +1,22 @@
-import flatMapDeep from 'lodash/flatMapDeep';
+import path from 'path';
+import minimist from 'minimist';
+import chalk from 'chalk';
+import ReactTailwindTypesGenerator from './TypesGenerator/ReactTailwindTypesGenerator';
+import TypeTemplatesCreator from './TypesGenerator/Adapters/TypeTemplatesCreator';
 
-const flatten = (obj = {}) => {
-  if (typeof obj !== 'object') return [];
+const args = minimist(process.argv.slice(2));
 
-  const valuesArr = Object.entries(obj).map(item => {
-    if (Array.isArray(item[1]) || typeof item[1] === 'string') {
-      return item[1];
-    } else if (typeof item[1] === 'object') {
-      return flatten(item[1]);
-    }
-  });
+// find outdir
+const outdir = args.outdir || 'src';
+const verbose = args.verbose || false;
 
-  return flatMapDeep(valuesArr) || [];
-};
-
-export function TailwindPropsToClasses(props: any): string {
-  if (!props) return '';
-
-  return flatten(props).join(' ');
+// run styling object interface generator
+async function run() {
+  console.log(chalk.blue(`Generating TailwindStylingObject interface info "${path.resolve(outdir)}"....`));
+  await new ReactTailwindTypesGenerator(
+    new TypeTemplatesCreator(outdir),
+    verbose
+  ).run();
+  console.log(chalk.green(`✅ TailwindStylingObject interface was generated successfully`));
 }
+run();

@@ -15,11 +15,14 @@ import TypeTemplatesCreator from './Adapters/TypeTemplatesCreator';
 export default class ReactTailwindTypesGenerator {
   adapter: TypeTemplatesCreator;
 
+  verbose: boolean;
+
   CONFIG_GLOB =
     '**/{tailwind,tailwind.config,tailwind-config,.tailwindrc}.{js,cjs}';
 
-  constructor(adapter) {
+  constructor(adapter, verbose) {
     this.adapter = adapter;
+    this.verbose = verbose
   }
 
   private async findTailwindConfigFile(): Promise<string> {
@@ -64,7 +67,9 @@ export default class ReactTailwindTypesGenerator {
 
     plugins.forEach(pluginData => {
       let pluginName = pluginData[0];
-      console.log(chalk.white`generating Type for :`, chalk.green(pluginName));
+      if (this.verbose) {
+        console.log(chalk.white`generating Type for :`, chalk.green(pluginName));
+      }
       let plugin = pluginData[1];
 
       if (plugin.__isOptionsFunction) {
