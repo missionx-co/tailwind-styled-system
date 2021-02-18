@@ -1,7 +1,7 @@
 {
-  "name": "react-tailwind-props",
-  "version": "0.1.0",
-  "description": "Generate Typescript typings files according to your tailwind configuration file to be used a props for your tailwind components",
+  "name": "@missionx/twstyle",
+  "version": "1.0.0",
+  "description": "Generate TailwindStylingObject interface based on your tailwind config file.",
   "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
