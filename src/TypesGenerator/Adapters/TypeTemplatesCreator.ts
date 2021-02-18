@@ -64,11 +64,11 @@ class TypeTemplatesCreator extends TypeGenerator {
       .concat('\n')
       .concat(`  customUtilities ?: string[];`);
 
-    let typeTemplate = `export default interface TailwindStyledSystem {
+    let typeTemplate = `export default interface TailwindStylingObject {
     ${properties}
   }`;
 
-    this.writeTypeIntoFile('TailwindStyledSystem', typeTemplate);
+    this.writeTypeIntoFile('TailwindStylingObject', typeTemplate);
   }
 }
 
