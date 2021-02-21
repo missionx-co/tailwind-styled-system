@@ -17,7 +17,22 @@ class TypeTemplatesCreator extends TypeGenerator {
 
   private generateValueStrings(key, values) {
     if (Array.isArray(values)) {
-      if (['padding', 'margin', 'borderRadius', 'borderWidth'].includes(key)) {
+      if (
+        [
+          'padding',
+          'margin',
+          'borderRadius',
+          'borderWidth',
+          'overflow',
+          'overscrollBehavior',
+          'inset',
+          'gap',
+          'divideWidth',
+          'scale',
+          'translate',
+          'skew',
+        ].includes(key)
+      ) {
         return `(${values.map(value => `"${value}"`).join(' | ')})[]`;
       }
       return values.map(value => `"${value}"`).join(' | ');
