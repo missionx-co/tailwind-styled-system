@@ -24,6 +24,7 @@ class TypeTemplatesCreator extends TypeGenerator {
           'borderRadius',
           'borderWidth',
           'overflow',
+          'space',
           'overscrollBehavior',
           'inset',
           'gap',
