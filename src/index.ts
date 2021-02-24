@@ -14,7 +14,7 @@ const flatten = (obj = {}) => {
   return flatMapDeep(valuesArr) || [];
 };
 
-export function twStyle(props: any): string {
+export function twStyleToClassName(props: any): string {
   if (!props) return '';
 
   return flatten(props).join(' ');
