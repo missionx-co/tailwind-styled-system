@@ -1,5 +1,7 @@
 .vscode
 node_modules
 example/tailwind-props
+example/TailwindStylingObject
 dist
 package-lock.json
+src/TailwindStylingObject.ts

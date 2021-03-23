@@ -1,5 +1,6 @@
 import path from 'path';
 import fs from 'fs';
+import { capitalizeFirstLetter } from '../StringHelpers';
 import { formatPropName } from '../StringHelpers';
 import TypeGenerator from './TypeGenerator';
 
@@ -8,15 +9,61 @@ class TypeTemplatesCreator extends TypeGenerator {
 
   constructor(outDir) {
     super();
-    this.outDir = outDir;
+    this.outDir = outDir + '/TailwindStylingObject';
     // make ourdir if not exits
     if (!fs.existsSync(path.resolve(this.outDir))) {
       fs.mkdirSync(path.resolve(this.outDir));
     }
   }
 
-  private generateValueStrings(key, values) {
-    if (Array.isArray(values)) {
+  private async writeTypeIntoFile(fileName, content) {
+    const file = fileName + '.ts';
+
+    try {
+      await fs.promises.writeFile(
+        path.normalize(path.resolve(this.outDir, file)),
+        content
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  generateTypeFile(type) {
+    const name = Object.keys(type || {})[0];
+    const classes =
+      (Object.prototype.hasOwnProperty.call(type, name) && type[name]) || [];
+
+    const typeName = capitalizeFirstLetter(name);
+    const valuesString = classes.map(value => `"${value}"`).join(' | ');
+
+    let typeTemplate = `type ${typeName} = ${valuesString};\n`;
+    typeTemplate = typeTemplate.concat(`export default ${typeName};`);
+
+    this.writeTypeIntoFile(typeName, typeTemplate);
+  }
+
+  generate(
+    pluginName?: string,
+    screens?: string[],
+    twSeparator?: string,
+    utilities?: any[],
+    variants?: string[]
+  ) {
+    this.pluginName = pluginName;
+    this.screens = screens;
+    this.twSeparator = twSeparator;
+    this.utilities = utilities;
+
+    const newType = this.generateType();
+
+    this.generateTypeFile(newType);
+
+    return newType;
+  }
+
+  private formatInterfaceProps(key, values) {
+    if (typeof values === 'string') {
       if (
         [
           'padding',
@@ -34,42 +81,41 @@ class TypeTemplatesCreator extends TypeGenerator {
           'skew',
         ].includes(key)
       ) {
-        return `(${values.map(value => `"${value}"`).join(' | ')})[]`;
+        return `(${values})[]`;
+      } else {
+        return values;
       }
-      return values.map(value => `"${value}"`).join(' | ');
     }
 
-    // if is object
+    // if object
     return [
       '{',
       ...Object.keys(values).map(key => {
-        const valuesString = this.generateValueStrings(key, values[key]);
+        const valuesString = this.formatInterfaceProps(key, values[key]);
         return `    ${formatPropName(key)} ?: ${valuesString}`;
       }),
       '}',
     ].join('\n');
   }
 
-  private async writeTypeIntoFile(fileName, content) {
-    const file = fileName + '.ts';
-
-    try {
-      await fs.promises.writeFile(
-        path.normalize(path.resolve(this.outDir, file)),
-        content
-      );
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
   generateTailwindPropsInterface() {
-    this.sortTypes();
+    this.generateAllProps();
 
-    const allTypesSorted = Object.entries(this.allTypes);
-    let properties = allTypesSorted
+    this.sortProps();
+
+    const imports = Object.entries(this.allTypes)
+      .map(
+        ([key, value]) =>
+          `import ${capitalizeFirstLetter(key)} from './${capitalizeFirstLetter(
+            key
+          )}';`
+      )
+      .join('\n');
+
+    const allPropsSorted = Object.entries(this.allInterfaceProps);
+    let properties = allPropsSorted
       .map(([key, value]) => {
-        return `  ${formatPropName(key)} ?: ${this.generateValueStrings(
+        return `  ${formatPropName(key)} ?: ${this.formatInterfaceProps(
           key,
           value
         )};`;
@@ -80,11 +126,9 @@ class TypeTemplatesCreator extends TypeGenerator {
       .concat('\n')
       .concat(`  customUtilities ?: string[];`);
 
-    let typeTemplate = `export default interface TailwindStylingObject {
-    ${properties}
-  }`;
+    const typeTemplate = `${imports}\n\nexport default interface TailwindStylingObject {\n${properties}\n}`;
 
-    this.writeTypeIntoFile('TailwindStylingObject', typeTemplate);
+    this.writeTypeIntoFile('index', typeTemplate);
   }
 }
 
