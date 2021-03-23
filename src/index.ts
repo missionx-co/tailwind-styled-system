@@ -1,4 +1,5 @@
 import flatMapDeep from 'lodash/flatMapDeep';
+import merge from 'lodash/merge';
 
 const flatten = (obj = {}) => {
   if (typeof obj !== 'object') return [];
@@ -18,4 +19,23 @@ export function twStyleToClassName(props: any): string {
   if (!props) return '';
 
   return flatten(props).join(' ');
+}
+
+export function mergeTwStyleObjects(twStyle1: any = {}, twStyle2: any = {}) {
+  // second parameter is the dominant side
+
+  const customUtilities1 = twStyle1?.customUtilities;
+  const customUtilities2 = twStyle2?.customUtilities;
+
+  const newCustomUtilities = !(
+    Array.isArray(customUtilities1) || Array.isArray(customUtilities2)
+  )
+    ? undefined
+    : [...(customUtilities1 || []), ...(customUtilities2 || [])];
+
+  const newTwStyle = merge({}, twStyle1, twStyle2);
+
+  newTwStyle['customUtilities'] = newCustomUtilities;
+
+  return newTwStyle;
 }
