@@ -64,6 +64,17 @@ abstract class TypeGenerator {
     return variantProps;
   }
 
+  private generateDarkVariantProps(props) {
+    return {
+      dark: mergeWith({}, props, (_des, src) => {
+        if (typeof src === 'string') {
+          return this.formatPropType('dark', src);
+        }
+        return undefined;
+      }),
+    };
+  }
+
   private generateResponsiveProps(props = {}) {
     const breakpoints = Object.keys(this.screens);
 
@@ -93,8 +104,16 @@ abstract class TypeGenerator {
     });
 
     const props = merge({}, mainProps, this.generateVariantProps(mainProps));
-
-    const allProps = merge({}, props, this.generateResponsiveProps(props));
+    const propsWithDarkProps = merge(
+      {},
+      props,
+      this.generateDarkVariantProps(props)
+    );
+    const allProps = merge(
+      {},
+      propsWithDarkProps,
+      this.generateResponsiveProps(propsWithDarkProps)
+    );
 
     this.allInterfaceProps = allProps;
 

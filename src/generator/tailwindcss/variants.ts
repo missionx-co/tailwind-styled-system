@@ -13,12 +13,11 @@ const variants = [
   'focus-visible',
   'active',
   'disabled',
-  'dark',
   'motion-safe',
   'motion-reduce',
 ];
 
 // check https://tailwindcss.com/docs/configuring-variants#overview
-// responsive not included becuase it's being handled individually
+// responsive and dark variants are not included becuase they are being handled individually
 
 export default variants;
