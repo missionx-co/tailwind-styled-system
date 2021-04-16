@@ -24,7 +24,8 @@ const flatten = (obj = {}) => {
 export function mergeTwStyleObjects(...twStyleObjects) {
   const allCustomUtilitiesMerged = twStyleObjects.reduce((acc, twStyleObject) => {
     if (
-      Array.isArray(twStyleObject.customUtilities)
+      twStyleObject
+      && Array.isArray(twStyleObject.customUtilities)
       && twStyleObject.customUtilities.length > 0
     ) {
       return [...acc, ...twStyleObject.customUtilities]
@@ -47,6 +48,6 @@ export default function twStyleToClassName(...twStyleObjects): string {
     return '';
   }
 
-  const props = mergeTwStyleObjects(twStyleObjects)
+  const props = mergeTwStyleObjects(...twStyleObjects)
   return flatten(props).join(' ');
 }

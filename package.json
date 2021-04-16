@@ -1,6 +1,6 @@
 {
   "name": "@missionx/twstyle",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Generate TailwindStylingObject interface based on your tailwind config file.",
   "main": "dist/index.js",
   "license": "MIT",
