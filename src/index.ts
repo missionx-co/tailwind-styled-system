@@ -15,27 +15,38 @@ const flatten = (obj = {}) => {
   return flatMapDeep(valuesArr) || [];
 };
 
-export function twStyleToClassName(props: any): string {
-  if (!props) return '';
+/**
+ * merge twStyle objects
+ * this function accomulate customUtilities for each twStyle object and merges the other properties of twStyle objects.
+ * @param twStyleObjects any
+ * @returns any
+ */
+export function mergeTwStyleObjects(...twStyleObjects) {
+  const allCustomUtilitiesMerged = twStyleObjects.reduce((acc, twStyleObject) => {
+    if (
+      Array.isArray(twStyleObject.customUtilities)
+      && twStyleObject.customUtilities.length > 0
+    ) {
+      return [...acc, ...twStyleObject.customUtilities]
+    }
+    return acc
+  }, [])
 
-  return flatten(props).join(' ');
+  const twStyle = merge({}, ...twStyleObjects)
+  twStyle.customUtilities = allCustomUtilitiesMerged
+  return twStyle
 }
 
-export function mergeTwStyleObjects(twStyle1: any = {}, twStyle2: any = {}) {
-  // second parameter is the dominant side
+/**
+ * merge the provided twStyle objects and convert the result twStyle object into tailwind classnamse
+ * @param twStyleObjects any
+ * @returns string
+ */
+export default function twStyleToClassName(...twStyleObjects): string {
+  if (twStyleObjects.length === 0) {
+    return '';
+  }
 
-  const customUtilities1 = twStyle1?.customUtilities;
-  const customUtilities2 = twStyle2?.customUtilities;
-
-  const newCustomUtilities = !(
-    Array.isArray(customUtilities1) || Array.isArray(customUtilities2)
-  )
-    ? undefined
-    : [...(customUtilities1 || []), ...(customUtilities2 || [])];
-
-  const newTwStyle = merge({}, twStyle1, twStyle2);
-
-  newTwStyle['customUtilities'] = newCustomUtilities;
-
-  return newTwStyle;
+  const props = mergeTwStyleObjects(twStyleObjects)
+  return flatten(props).join(' ');
 }
