@@ -22,19 +22,23 @@ const flatten = (obj = {}) => {
  * @returns any
  */
 export function mergeTwStyleObjects(...twStyleObjects) {
-  const allCustomUtilitiesMerged = twStyleObjects.reduce((acc, twStyleObject) => {
-    if (
-      Array.isArray(twStyleObject.customUtilities)
-      && twStyleObject.customUtilities.length > 0
-    ) {
-      return [...acc, ...twStyleObject.customUtilities]
-    }
-    return acc
-  }, [])
+  const allCustomUtilitiesMerged = twStyleObjects.reduce(
+    (acc, twStyleObject) => {
+      if (
+        twStyleObject &&
+        Array.isArray(twStyleObject.customUtilities) &&
+        twStyleObject.customUtilities.length > 0
+      ) {
+        return [...acc, ...twStyleObject.customUtilities];
+      }
+      return acc;
+    },
+    []
+  );
 
-  const twStyle = merge({}, ...twStyleObjects)
-  twStyle.customUtilities = allCustomUtilitiesMerged
-  return twStyle
+  const twStyle = merge({}, ...twStyleObjects);
+  twStyle.customUtilities = allCustomUtilitiesMerged;
+  return twStyle;
 }
 
 /**
@@ -47,6 +51,6 @@ export default function twStyleToClassName(...twStyleObjects): string {
     return '';
   }
 
-  const props = mergeTwStyleObjects(twStyleObjects)
+  const props = mergeTwStyleObjects(twStyleObjects);
   return flatten(props).join(' ');
 }
