@@ -17,17 +17,17 @@ export default class ReactTailwindTypesGenerator {
 
   verbose: boolean;
 
-  dest: 'dev' | 'prod' | 'decl';
+  env: 'dev' | 'prod' | 'decl';
 
   moduleName: string;
 
   CONFIG_GLOB =
     '**/{tailwind,tailwind.config,tailwind-config,.tailwindrc}.{js,cjs}';
 
-  constructor(adapter, verbose, dest, moduleName) {
+  constructor(adapter, verbose, env, moduleName) {
     this.adapter = adapter;
     this.verbose = verbose;
-    this.dest = dest;
+    this.env = env;
     this.moduleName = moduleName;
   }
 
@@ -59,7 +59,7 @@ export default class ReactTailwindTypesGenerator {
   }
 
   async run() {
-    if (this.dest !== 'prod') {
+    if (this.env !== 'prod') {
       const configPath = await this.findTailwindConfigFile();
       const fullConfig = resolveConfig(require(configPath));
       const plugins = [...corePlugins(fullConfig)];
@@ -136,6 +136,6 @@ export default class ReactTailwindTypesGenerator {
       });
     }
 
-    this.adapter.generateTailwindPropsInterface(this.dest, this.moduleName);
+    this.adapter.generateTailwindPropsInterface(this.env, this.moduleName);
   }
 }

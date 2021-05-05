@@ -98,51 +98,52 @@ class TypeTemplatesCreator extends TypeGenerator {
     ].join('\n');
   }
 
-  generateTailwindPropsInterface(dest = 'dev', moduleName) {
-    if (dest === 'prod') {
+  generateTailwindPropsInterface(env = 'dev', moduleName) {
+    if (env === 'prod') {
       const typeTemplate = `export default interface TailwindStylingObject {\n[key: string] : any;\n}`;
 
       this.writeTypeIntoFile('index', typeTemplate);
-    } else {
-      this.generateAllProps();
 
-      this.sortProps();
-
-      const imports = Object.entries(this.allTypes)
-        .map(
-          ([key, value]) =>
-            `import ${capitalizeFirstLetter(
-              key
-            )} from './${capitalizeFirstLetter(key)}';`
-        )
-        .join('\n');
-
-      const allPropsSorted = Object.entries(this.allInterfaceProps);
-      let properties = allPropsSorted
-        .map(([key, value]) => {
-          return `  ${formatPropName(key)} ?: ${this.formatInterfaceProps(
-            key,
-            value
-          )};`;
-        })
-        .join('\n');
-
-      properties = properties
-        .concat('\n')
-        .concat(`  customUtilities ?: string[];`);
-
-      let typeTemplate, fileName;
-
-      if (dest === 'decl') {
-        fileName = 'index.d';
-        typeTemplate = `${imports}\n\ndeclare module "${moduleName}" {\n interface TailwindStylingObject {\n${properties}\n} \n}`;
-      } else {
-        fileName = 'index';
-        typeTemplate = `${imports}\n\nexport default interface TailwindStylingObject {\n${properties}\n}`;
-      }
-
-      this.writeTypeIntoFile(fileName, typeTemplate);
+      return;
     }
+    this.generateAllProps();
+
+    this.sortProps();
+
+    const imports = Object.entries(this.allTypes)
+      .map(
+        ([key, value]) =>
+          `import ${capitalizeFirstLetter(key)} from './${capitalizeFirstLetter(
+            key
+          )}';`
+      )
+      .join('\n');
+
+    const allPropsSorted = Object.entries(this.allInterfaceProps);
+    let properties = allPropsSorted
+      .map(([key, value]) => {
+        return `  ${formatPropName(key)} ?: ${this.formatInterfaceProps(
+          key,
+          value
+        )};`;
+      })
+      .join('\n');
+
+    properties = properties
+      .concat('\n')
+      .concat(`  customUtilities ?: string[];`);
+
+    let typeTemplate, fileName;
+
+    if (env === 'decl') {
+      fileName = 'index.d';
+      typeTemplate = `${imports}\n\ndeclare module "${moduleName}" {\n interface TailwindStylingObject {\n${properties}\n} \n}`;
+    } else {
+      fileName = 'index';
+      typeTemplate = `${imports}\n\nexport default interface TailwindStylingObject {\n${properties}\n}`;
+    }
+
+    this.writeTypeIntoFile(fileName, typeTemplate);
   }
 }
 

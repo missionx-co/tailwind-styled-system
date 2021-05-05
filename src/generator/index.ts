@@ -11,7 +11,7 @@ const args = minimist(process.argv.slice(2));
 // find outdir
 const outdir = args.outdir || 'src';
 const verbose = args.verbose || false;
-const dest = args.dest || 'dev';
+const env = args.env || 'dev';
 const moduleName = args.module || 'module';
 
 // run styling object interface generator
@@ -26,7 +26,7 @@ async function run() {
   await new ReactTailwindTypesGenerator(
     new TypeTemplatesCreator(outdir),
     verbose,
-    dest,
+    env,
     moduleName
   ).run();
   console.log(
