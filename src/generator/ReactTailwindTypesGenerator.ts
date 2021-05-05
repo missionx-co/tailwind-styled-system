@@ -17,12 +17,18 @@ export default class ReactTailwindTypesGenerator {
 
   verbose: boolean;
 
+  env: 'dev' | 'prod' | 'decl';
+
+  moduleName: string;
+
   CONFIG_GLOB =
     '**/{tailwind,tailwind.config,tailwind-config,.tailwindrc}.{js,cjs}';
 
-  constructor(adapter, verbose) {
+  constructor(adapter, verbose, env, moduleName) {
     this.adapter = adapter;
-    this.verbose = verbose
+    this.verbose = verbose;
+    this.env = env;
+    this.moduleName = moduleName;
   }
 
   private async findTailwindConfigFile(): Promise<string> {
@@ -53,78 +59,83 @@ export default class ReactTailwindTypesGenerator {
   }
 
   async run() {
-    const configPath = await this.findTailwindConfigFile();
-    const fullConfig = resolveConfig(require(configPath));
-    const plugins = [...corePlugins(fullConfig)];
-    const getConfigValue = (path, defaultValue) =>
-      path ? getValue(fullConfig, path, defaultValue) : fullConfig;
+    if (this.env !== 'prod') {
+      const configPath = await this.findTailwindConfigFile();
+      const fullConfig = resolveConfig(require(configPath));
+      const plugins = [...corePlugins(fullConfig)];
+      const getConfigValue = (path, defaultValue) =>
+        path ? getValue(fullConfig, path, defaultValue) : fullConfig;
 
-    const applyConfiguredPrefix = selector => {
-      return prefixSelector(fullConfig.prefix, selector);
-    };
+      const applyConfiguredPrefix = selector => {
+        return prefixSelector(fullConfig.prefix, selector);
+      };
 
-    const screens = getValue(fullConfig, 'theme.screens', {});
+      const screens = getValue(fullConfig, 'theme.screens', {});
 
-    plugins.forEach(pluginData => {
-      let pluginName = pluginData[0];
-      if (this.verbose) {
-        console.log(chalk.white`generating Type for :`, chalk.green(pluginName));
-      }
-      let plugin = pluginData[1];
-
-      if (plugin.__isOptionsFunction) {
-        plugin = plugin();
-      }
-
-      const handler =
-        typeof plugin === 'function'
-          ? plugin
-          : plugin.handler
-          ? plugin.handler
-          : () => {};
-
-      handler({
-        variants: (path, defaultValue) => {
-          if (Array.isArray(fullConfig.variants)) {
-            return fullConfig.variants;
-          }
-
-          return getConfigValue(`variants.${path}`, defaultValue);
-        },
-
-        theme: (path, defaultValue) => {
-          const [pathRoot, ...subPaths] = toPath(path);
-          const value = getConfigValue(
-            ['theme', pathRoot, ...subPaths],
-            defaultValue
+      plugins.forEach(pluginData => {
+        let pluginName = pluginData[0];
+        if (this.verbose) {
+          console.log(
+            chalk.white`generating Type for :`,
+            chalk.green(pluginName)
           );
+        }
+        let plugin = pluginData[1];
 
-          return transformThemeValue(pathRoot)(value);
-        },
+        if (plugin.__isOptionsFunction) {
+          plugin = plugin();
+        }
 
-        corePlugins: path => {
-          if (Array.isArray(fullConfig.corePlugins)) {
-            return fullConfig.corePlugins.includes(path);
-          }
+        const handler =
+          typeof plugin === 'function'
+            ? plugin
+            : plugin.handler
+            ? plugin.handler
+            : () => {};
 
-          return getConfigValue(`corePlugins.${path}`, true);
-        },
+        handler({
+          variants: (path, defaultValue) => {
+            if (Array.isArray(fullConfig.variants)) {
+              return fullConfig.variants;
+            }
 
-        e: escapeClassName,
-        prefix: applyConfiguredPrefix,
+            return getConfigValue(`variants.${path}`, defaultValue);
+          },
 
-        addBase: () => {},
-        addComponents: () => {},
-        addVariant: () => {},
-        addUtilities: this.adapter.generate.bind(
-          this.adapter,
-          pluginName,
-          screens,
-          fullConfig.separator || ':'
-        ),
+          theme: (path, defaultValue) => {
+            const [pathRoot, ...subPaths] = toPath(path);
+            const value = getConfigValue(
+              ['theme', pathRoot, ...subPaths],
+              defaultValue
+            );
+
+            return transformThemeValue(pathRoot)(value);
+          },
+
+          corePlugins: path => {
+            if (Array.isArray(fullConfig.corePlugins)) {
+              return fullConfig.corePlugins.includes(path);
+            }
+
+            return getConfigValue(`corePlugins.${path}`, true);
+          },
+
+          e: escapeClassName,
+          prefix: applyConfiguredPrefix,
+
+          addBase: () => {},
+          addComponents: () => {},
+          addVariant: () => {},
+          addUtilities: this.adapter.generate.bind(
+            this.adapter,
+            pluginName,
+            screens,
+            fullConfig.separator || ':'
+          ),
+        });
       });
-    });
+    }
 
-    this.adapter.generateTailwindPropsInterface();
+    this.adapter.generateTailwindPropsInterface(this.env, this.moduleName);
   }
 }

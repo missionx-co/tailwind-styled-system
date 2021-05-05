@@ -98,7 +98,14 @@ class TypeTemplatesCreator extends TypeGenerator {
     ].join('\n');
   }
 
-  generateTailwindPropsInterface() {
+  generateTailwindPropsInterface(env = 'dev', moduleName) {
+    if (env === 'prod') {
+      const typeTemplate = `export default interface TailwindStylingObject {\n[key: string] : any;\n}`;
+
+      this.writeTypeIntoFile('index', typeTemplate);
+
+      return;
+    }
     this.generateAllProps();
 
     this.sortProps();
@@ -126,9 +133,17 @@ class TypeTemplatesCreator extends TypeGenerator {
       .concat('\n')
       .concat(`  customUtilities ?: string[];`);
 
-    const typeTemplate = `${imports}\n\nexport default interface TailwindStylingObject {\n${properties}\n}`;
+    let typeTemplate, fileName;
 
-    this.writeTypeIntoFile('index', typeTemplate);
+    if (env === 'decl') {
+      fileName = 'index.d';
+      typeTemplate = `${imports}\n\ndeclare module "${moduleName}" {\n interface TailwindStylingObject {\n${properties}\n} \n}`;
+    } else {
+      fileName = 'index';
+      typeTemplate = `${imports}\n\nexport default interface TailwindStylingObject {\n${properties}\n}`;
+    }
+
+    this.writeTypeIntoFile(fileName, typeTemplate);
   }
 }
 
