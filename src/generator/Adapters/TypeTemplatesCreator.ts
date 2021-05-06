@@ -136,7 +136,7 @@ class TypeTemplatesCreator extends TypeGenerator {
     let typeTemplate, fileName;
 
     if (env === 'decl') {
-      fileName = 'index.d';
+      fileName = 'TailwindStylingObject.d';
       typeTemplate = `${imports}\n\ndeclare module "${moduleName}" {\n interface TailwindStylingObject {\n${properties}\n} \n}`;
     } else {
       fileName = 'index';
